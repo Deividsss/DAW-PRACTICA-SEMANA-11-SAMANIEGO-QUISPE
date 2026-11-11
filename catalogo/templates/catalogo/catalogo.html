@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Catálogo | DEIVIDSAM STORE{% endblock %}
+
+{% block content %}
+    <section class="page-heading">
+        <div>
+            <p class="eyebrow">Todos tus productos</p>
+            <h1>Catálogo</h1>
+            <p class="subtitle">Busca, filtra y revisa el estado de cada producto.</p>
+        </div>
+        <a class="button button-secondary" href="{% url 'catalogo:home' %}">← Volver al resumen</a>
+    </section>
+
+    <form class="card filter-card" method="get" action="{% url 'catalogo:catalogo' %}">
+        <div class="field">
+            <label for="q">Buscar producto</label>
+            <input id="q" name="q" type="search" value="{{ busqueda }}" placeholder="Nombre o descripción">
+        </div>
+        <div class="field">
+            <label for="estado">Disponibilidad</label>
+            <select id="estado" name="estado">
+                <option value="" {% if not estado_seleccionado %}selected{% endif %}>Todos los productos</option>
+                <option value="disponibles" {% if estado_seleccionado == 'disponibles' %}selected{% endif %}>Disponibles</option>
+                <option value="agotados" {% if estado_seleccionado == 'agotados' %}selected{% endif %}>Agotados / sin stock</option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="orden">Ordenar por</label>
+            <select id="orden" name="orden">
+                <option value="nombre" {% if orden_seleccionado == 'nombre' %}selected{% endif %}>Nombre A–Z</option>
+                <option value="-nombre" {% if orden_seleccionado == '-nombre' %}selected{% endif %}>Nombre Z–A</option>
+                <option value="precio" {% if orden_seleccionado == 'precio' %}selected{% endif %}>Precio: menor primero</option>
+                <option value="-precio" {% if orden_seleccionado == '-precio' %}selected{% endif %}>Precio: mayor primero</option>
+                <option value="stock" {% if orden_seleccionado == 'stock' %}selected{% endif %}>Stock: menor primero</option>
+                <option value="-stock" {% if orden_seleccionado == '-stock' %}selected{% endif %}>Stock: mayor primero</option>
+            </select>
+        </div>
+        <button class="button" type="submit">Aplicar filtros</button>
+    </form>
+
+    <div class="catalog-summary">
+        <span>{{ total_resultados }} producto{{ total_resultados|pluralize:"s" }} encontrado{{ total_resultados|pluralize:"s" }}</span>
+        {% if busqueda or estado_seleccionado %}
+            <a class="text-link" href="{% url 'catalogo:catalogo' %}">Limpiar filtros</a>
+        {% endif %}
+    </div>
+
+    <section class="card section-card">
+        {% if productos %}
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr><th>#</th><th>Producto</th><th>Precio</th><th>Stock</th><th>Valor stock</th><th>Estado</th><th>Registrado</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for p in productos %}
+                        <tr>
+                            <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+                            <td><span class="product-name">{{ p.nombre|title }}</span><span class="product-description">{{ p.descripcion|default:"Sin descripción" }}</span></td>
+                            <td class="price">S/ {{ p.precio|floatformat:2 }}</td>
+                            <td>
+                                {% if p.stock <= 5 and p.stock > 0 %}
+                                    <span class="badge low-stock">{{ p.stock }} unidades</span>
+                                {% else %}
+                                    {{ p.stock }}
+                                {% endif %}
+                            </td>
+                            <td class="price">S/ {{ p.valor_stock|floatformat:2 }}</td>
+                            <td>
+                                {% if p.disponible and p.stock > 0 %}
+                                    <span class="badge ok">Disponible</span>
+                                {% else %}
+                                    <span class="badge agotado">Agotado</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ p.fecha_creacion|date:"d/m/Y" }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if is_paginated %}
+                <nav class="pagination" aria-label="Paginación del catálogo">
+                    {% if page_obj.has_previous %}
+                        <a class="button button-secondary" href="?q={{ busqueda|urlencode }}&amp;estado={{ estado_seleccionado|urlencode }}&amp;orden={{ orden_seleccionado|urlencode }}&amp;page={{ page_obj.previous_page_number }}">← Anterior</a>
+                    {% endif %}
+                    <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                    {% if page_obj.has_next %}
+                        <a class="button button-secondary" href="?q={{ busqueda|urlencode }}&amp;estado={{ estado_seleccionado|urlencode }}&amp;orden={{ orden_seleccionado|urlencode }}&amp;page={{ page_obj.next_page_number }}">Siguiente →</a>
+                    {% endif %}
+                </nav>
+            {% endif %}
+        {% else %}
+            <p class="empty-state">No encontramos productos con esos criterios. Prueba otra búsqueda o limpia los filtros.</p>
+        {% endif %}
+    </section>
+{% endblock %}
